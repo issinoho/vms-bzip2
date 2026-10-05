@@ -1,0 +1,22 @@
+Subject: bzip2.c: on OpenVMS, a $-prefixed BZIP2 or BZIP is not options
+
+bzip2 reads extra options from the environment variables BZIP2 and BZIP.
+The VMS C RTL's getenv() also returns DCL symbols, and the usual way to
+run bzip2 is the foreign command bzip2 :== $dev:[dir]BZIP2.EXE: bzip2 took
+its own image as a file to compress.  Ignore a value starting with "$" (a
+foreign command); a logical name or symbol holding options still works.
+
+--- a/bzip2.c	2026-10-05 10:54:21.568294011 +0100
++++ b/bzip2.c	2026-10-05 10:54:21.558311441 +0100
+@@ -1760,6 +1760,11 @@
+    Char *envbase, *p;
+ 
+    envbase = getenv(varName);
++#ifdef __VMS
++   /* getenv() also returns DCL symbols, and "bzip2" is the foreign command
++      ($dev:[dir]BZIP2.EXE) that runs bzip2 itself: not options.  */
++   if (envbase != NULL && envbase[0] == '$') envbase = NULL;
++#endif
+    if (envbase != NULL) {
+       p = envbase;
+       i = 0;

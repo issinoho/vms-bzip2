@@ -1,0 +1,59 @@
+Subject: bzip2.c, bzip2recover.c: on OpenVMS, exit through vms_exit()
+
+With _POSIX_EXIT the C RTL gives every exit code a success severity, so to
+DCL a failed bzip2 run looked successful and ON ERROR never fired.  Route
+exit() to vms_exit() (vms/vms_exit.c), which gives DCL an error severity
+and keeps the POSIX status under a GNV shell, and end bzip2's main with
+exit(): a return from main bypasses it.  (Defining exit=vms_exit on the
+command line does not work: <stdlib.h> builds __posix_exit from it.)
+
+--- a/bzip2.c	2026-10-05 10:48:22.517023742 +0100
++++ b/bzip2.c	2026-10-05 10:51:03.975965924 +0100
+@@ -56,6 +56,16 @@
+ #include <ctype.h>
+ #include "bzlib.h"
+ 
++#ifdef __VMS
++/* OpenVMS: with _POSIX_EXIT the C RTL gives every exit code a success
++   severity, so to DCL a failed run looked successful.  vms_exit()
++   (vms/vms_exit.c) gives DCL an error severity, and keeps the POSIX status
++   under a GNV shell.  */
++# undef exit
++# define exit vms_exit
++extern void vms_exit (int status);
++#endif
++
+ #define ERROR_IF_EOF(i)       { if ((i) == EOF)  ioError(); }
+ #define ERROR_IF_NOT_ZERO(i)  { if ((i) != 0)    ioError(); }
+ #define ERROR_IF_MINUS_ONE(i) { if ((i) == (-1)) ioError(); }
+@@ -2027,6 +2037,11 @@
+       aa = aa2;
+    }
+ 
++#ifdef __VMS
++   /* exit (vms_exit, above) gives DCL an error severity for a failed run;
++      a return from main would not.  */
++   exit(exitValue);
++#endif
+    return exitValue;
+ }
+ 
+--- a/bzip2recover.c	2026-10-05 10:50:47.199411869 +0100
++++ b/bzip2recover.c	2026-10-05 10:51:03.975591793 +0100
+@@ -25,6 +25,16 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
++#ifdef __VMS
++/* OpenVMS: with _POSIX_EXIT the C RTL gives every exit code a success
++   severity, so to DCL a failed run looked successful.  vms_exit()
++   (vms/vms_exit.c) gives DCL an error severity, and keeps the POSIX status
++   under a GNV shell.  */
++# undef exit
++# define exit vms_exit
++extern void vms_exit (int status);
++#endif
++
+ 
+ /* This program records bit locations in the file to be recovered.
+    That means that if 64-bit ints are not supported, we will not

@@ -1,0 +1,5 @@
+# Ordered list of patches applied to the upstream tree (one per line).
+0001-bzlib-h-names-vms.patch
+0002-exit-vms-exit.patch
+0003-bzip2-env-not-foreign-command-vms.patch
+0004-bzip2-text-records-vms.patch

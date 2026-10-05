@@ -1,0 +1,55 @@
+Subject: bzip2.c: on OpenVMS, compress a text file's lines, not its records
+
+A VMS text file has variable-length (or VFC) records.  bzip2 opens its
+input in binary mode, and then the C RTL returns the records without their
+line breaks: a compressed text file decompressed to one long line.  On VMS
+read a file with variable-length or VFC records as text, so the compressed
+data has LF-terminated lines, as a Unix text file does; read any other
+file (stream, fixed-length records, that is binary data) as binary.
+
+--- a/bzip2.c	2026-10-05 10:57:16.591252453 +0100
++++ b/bzip2.c	2026-10-05 10:57:16.612549077 +0100
+@@ -967,6 +967,25 @@
+    security issues, simple this simply behaves like fopen.
+ */
+ static
++#ifdef __VMS
++#include <fabdef.h>
++/* A VMS text file has variable-length (or VFC) records; read in binary
++   mode, the C RTL gives the records without their line breaks.  Read such a
++   file as text, so the compressed data has LF-terminated lines (as on Unix);
++   any other file (stream, fixed-length records: binary data) as binary.  */
++static const char *compressInputMode ( Char *name )
++{
++   struct stat st;
++   if (stat ( name, &st ) == 0
++       && (st.st_fab_rfm == FAB$C_VAR || st.st_fab_rfm == FAB$C_VFC))
++      return "r";
++   return "rb";
++}
++#define COMPRESS_INPUT_MODE(name) compressInputMode ( name )
++#else
++#define COMPRESS_INPUT_MODE(name) "rb"
++#endif
++
+ FILE* fopen_output_safely ( Char* name, const char* mode )
+ {
+ #  if BZ_UNIX
+@@ -1249,7 +1268,7 @@
+          break;
+ 
+       case SM_F2O:
+-         inStr = fopen ( inName, "rb" );
++         inStr = fopen ( inName, COMPRESS_INPUT_MODE ( inName ) );
+          outStr = stdout;
+          if ( isatty ( fileno ( stdout ) ) ) {
+             fprintf ( stderr,
+@@ -1270,7 +1289,7 @@
+          break;
+ 
+       case SM_F2F:
+-         inStr = fopen ( inName, "rb" );
++         inStr = fopen ( inName, COMPRESS_INPUT_MODE ( inName ) );
+          outStr = fopen_output_safely ( outName, "wb" );
+          if ( outStr == NULL) {
+             fprintf ( stderr, "%s: Can't create output file %s: %s.\n",
