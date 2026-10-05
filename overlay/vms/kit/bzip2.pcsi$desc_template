@@ -1,0 +1,36 @@
+--
+-- PCSI product description for bzip2 on OpenVMS.
+-- Template: tools/prepare.sh substitutes @PRODUCER@, @BASE@ and @PCSIVERSION@.
+--
+product @PRODUCER@ @BASE@ BZIP2 @PCSIVERSION@ full ;
+
+    information RELEASE_NOTES phase after ;
+
+    directory [BZIP2] ;
+    directory [BZIP2.BIN] ;
+    directory [BZIP2.DOC] ;
+    directory [BZIP2.INCLUDE] ;
+    directory [BZIP2.LIB] ;
+
+    file [BZIP2.BIN]BZIP2.EXE ;
+    file [BZIP2.BIN]BZIP2RECOVER.EXE ;
+    file [BZIP2.LIB]LIBBZ2.OLB ;
+@INCLUDES@
+    file [SYS$STARTUP]BZIP2$STARTUP.COM ;
+    file [BZIP2]BZIP2$SETUP.COM ;
+    file [BZIP2.DOC]README.VMS ;
+    file [BZIP2.DOC]LICENSE. ;
+    file [BZIP2.DOC]CHANGES. ;
+    file [BZIP2.DOC]BZIP2.1 ;
+    file [BZIP2.DOC]BZIP2.TXT ;
+    file [BZIP2.DOC]MANUAL.HTML ;
+
+    -- Define BZIP2$ROOT now and print the post-installation tasks (PCSI shows
+    -- only the title of an information message unless /HELP is given).
+    execute postinstall "@PCSI$DESTINATION:[SYS$STARTUP]BZIP2$STARTUP.COM INSTALL" interactive ;
+    -- On removal, deassign BZIP2$ROOT.
+    execute install "CONTINUE" remove "@PCSI$DESTINATION:[SYS$STARTUP]BZIP2$STARTUP.COM REMOVE" ;
+
+    information POST_INSTALL phase after ;
+
+end product ;

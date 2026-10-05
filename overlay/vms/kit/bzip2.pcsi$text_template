@@ -1,0 +1,18 @@
+=product @PRODUCER@ @BASE@ BZIP2 @PCSIVERSION@ full
+1 'PRODUCER
+=prompt @PRODUCER@
+1 'PRODUCT
+=prompt bzip2 @VERSION@ for OpenVMS
+1 'NOTICE
+=prompt bzip2 is free software under a BSD-style licence; see LICENSE.
+1 RELEASE_NOTES
+=prompt Documentation is in [BZIP2.DOC]README.VMS under the installation directory.
+1 POST_INSTALL
+=prompt Post-installation tasks for bzip2
+    At system startup: to define BZIP2$ROOT at every boot, add this line to
+    SYS$MANAGER:SYSTARTUP_VMS.COM:
+    $ @SYS$STARTUP:BZIP2$STARTUP.COM
+    For each user: to define the commands, add this line to LOGIN.COM:
+    $ @BZIP2$ROOT:[000000]BZIP2$SETUP.COM
+
+PRODUCT REMOVE BZIP2 removes the product and deassigns BZIP2$ROOT.

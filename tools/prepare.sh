@@ -51,8 +51,8 @@ step "descrip.mms builds all $(echo "$unix" | wc -l) library objects"
 if [ -d "$stage/vms/kit" ]; then
 step "PCSI kit inputs"
 : "${KIT_PRODUCER:=ISSINOHO}"
-# Three-part versions (1.0.8): the third part is the PCSI update and our VMS
-# patch level the ECO, so 1.0.8-vms1 is V1.0-8E1.
+# Three-part versions: the third part is the PCSI update and our VMS patch
+# level the ECO, so $UPSTREAM_VERSION-vms$VMS_PATCH_LEVEL is V<major>.<minor>-<update>E<level>.
 IFS=. read -r major minor update _ <<< "$UPSTREAM_VERSION"
 pcsiversion="V$major.$minor-${update:-0}E$VMS_PATCH_LEVEL"
 kitversion="$UPSTREAM_VERSION-vms$VMS_PATCH_LEVEL"
@@ -62,8 +62,11 @@ subst() {
         -e "s/@PCSIVERSION@/$pcsiversion/g" -e "s/@VERSION@/$UPSTREAM_VERSION/g" \
         -e "s/@KITVERSION@/$kitversion/g" -e "s/@ARCH@/$2/g"
 }
+# The headers the kit installs, as PCSI file lines.
+includes=$( echo BZLIB.H | sed 's|.*|    file [BZIP2.INCLUDE]&;|; s|;$| ;|')
 for base in I64VMS X86VMS; do
-    subst $base "" < "$kit/bzip2.pcsi\$desc_template" > "$kit/BZIP2-$base.PCSI\$DESC"
+    subst $base "" < "$kit/bzip2.pcsi\$desc_template" |
+        awk -v d="$includes" '{ if ($0 == "@INCLUDES@") print d; else print }' > "$kit/BZIP2-$base.PCSI\$DESC"
     subst $base "" < "$kit/bzip2.pcsi\$text_template" > "$kit/BZIP2-$base.PCSI\$TEXT"
 done
 rm -f "$kit/bzip2.pcsi\$desc_template" "$kit/bzip2.pcsi\$text_template"

@@ -1,0 +1,71 @@
+bzip2 for OpenVMS
+=================
+
+This is bzip2 @VERSION@ built natively for OpenVMS @ARCH@, from the
+unmodified release plus the patches in the vms-bzip2 project:
+
+    https://github.com/issinoho/vms-bzip2
+
+Kit version: @KITVERSION@.  bzip2 is free software under a BSD-style licence; see LICENSE.  The
+manual is MANUAL.HTML and BZIP2.TXT; BZIP2.1 is the manual page.
+
+What is installed
+-----------------
+    BZIP2$ROOT:[BIN]BZIP2.EXE, BZIP2RECOVER.EXE
+    BZIP2$ROOT:[LIB]LIBBZ2.OLB      the library (libbz2)
+    BZIP2$ROOT:[INCLUDE]BZLIB.H
+    BZIP2$ROOT:[DOC]                this file, LICENSE, CHANGES, the manual
+    BZIP2$ROOT:[000000]BZIP2$SETUP.COM   defines the commands
+    SYS$STARTUP:BZIP2$STARTUP.COM      defines BZIP2$ROOT
+
+Setting up
+----------
+The kit installs BZIP2$STARTUP.COM into SYS$STARTUP and runs it once.  To
+define BZIP2$ROOT at every boot, the system manager adds this line to
+SYS$MANAGER:SYSTARTUP_VMS.COM:
+
+    $ @SYS$STARTUP:BZIP2$STARTUP.COM
+
+Each user (or SYLOGIN.COM, for everyone) then defines the commands:
+
+    $ @BZIP2$ROOT:[000000]BZIP2$SETUP.COM
+
+Using it
+--------
+    $ bzip2 "-k" file.txt           ! file.txt.bz2, keeping file.txt
+    $ bunzip2 file.txt.bz2          ! bzip2 -d
+    $ bzcat file.txt.bz2            ! to SYS$OUTPUT
+    $ bzip2 "-t" file.txt.bz2       ! test it
+
+A name like file.txt.bz2 needs an ODS-5 disk.
+
+Text and binary files
+---------------------
+A VMS text file (variable-length or VFC records) is compressed as text:
+its records become lines ending in LF, as on Unix, so the compressed file
+can be unpacked anywhere.  Decompressing gives a Stream_LF file with the
+same lines.  Any other file (stream, fixed-length records: executables,
+kits, binary data) is compressed byte for byte.
+
+Using the library
+-----------------
+Compile with /INCLUDE=BZIP2$ROOT:[INCLUDE] and link with
+BZIP2$ROOT:[LIB]LIBBZ2.OLB/LIBRARY.  The library is compiled /NAMES=(AS_IS,SHORTENED); its
+header declares the API so, so a program compiled with any /NAMES links
+with it.
+
+Exit status
+-----------
+Under DCL a failed run exits with an error-severity status, so ON ERROR and
+IF .NOT. $STATUS work; the exit code N is ($STATUS .AND. %X7F8) / 8.  Under
+a GNV shell, $? is the exit code as on Unix.
+
+Upper-case options and batch jobs
+---------------------------------
+Under the TRADITIONAL DCL parse style DCL upper-cases the unquoted parts of
+a command and the C run-time library passes them to the program in lower
+case.  Batch jobs use TRADITIONAL even when interactive logins are set to
+EXTENDED.  Quote options with capitals, use the long forms, or start the
+procedure with
+
+    $ SET PROCESS/PARSE_STYLE=EXTENDED
