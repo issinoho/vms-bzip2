@@ -19,6 +19,14 @@ $ top = f$environment("DEFAULT")
 $ arch = f$edit(f$getsyi("ARCH_NAME"), "UPCASE")
 $ bin = f$parse("[.BIN_''arch']",,,"DEVICE") + f$parse("[.BIN_''arch']",,,"DIRECTORY")
 $ if p1 .nes. "" then bin = p1
+$! The library and header: the tree's install tree, or the kit's (P1 given).
+$ inc = f$parse("[.INSTALL_''arch'.INCLUDE]",,,"DEVICE") + f$parse("[.INSTALL_''arch'.INCLUDE]",,,"DIRECTORY")
+$ olb = f$parse("[.INSTALL_''arch'.LIB]LIBBZ2.OLB")
+$ if p1 .nes. ""
+$ then
+$   inc = bin - "BIN]" + "INCLUDE]"
+$   olb = bin - "BIN]" + "LIB]LIBBZ2.OLB"
+$ endif
 $ write sys$output "SMOKE: testing ", bin
 $ bzip2 = "$" + bin + "BZIP2.EXE"
 $ bzip2recover = "$" + bin + "BZIP2RECOVER.EXE"
@@ -123,7 +131,26 @@ $ sev = $severity
 $ name = "a missing file gives an error status"
 $ gosub check_failure
 $!
-$! 11. bzip2recover splits a file into its blocks
+$! 11. a program compiled with the default /NAMES links with LIBBZ2.OLB
+$!     (bzlib.h declares the API /NAMES=(AS_IS,SHORTENED), patch 0001)
+$ create ver.c
+#include <stdio.h>
+#include <bzlib.h>
+int main (void)
+{
+  printf ("libbz2 %s\n", BZ2_bzlibVersion ());
+  return 0;
+}
+$ cc/nolist/include_directory='inc' ver.c
+$ link/nomap ver, 'olb'/library
+$ define/user sys$output out.txt
+$ run ver
+$ search/nooutput out.txt "libbz2 1.0"
+$ sev = $severity
+$ name = "a program compiled /NAMES=UPPERCASE links with LIBBZ2.OLB"
+$ gosub check_success
+$!
+$! 12. bzip2recover splits a file into its blocks
 $ copy/nolog 'top'sample1.bz2 rec.bz2
 $ define/user sys$error out.txt
 $ bzip2recover rec.bz2
