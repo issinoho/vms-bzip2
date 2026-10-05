@@ -24,3 +24,10 @@ cat > "$job" <<DCL
 DCL
 VMS_TIMEOUT=${VMS_BUILD_TIMEOUT:-5400} "$top/tools/vms.sh" "$node" run "$job" | tee "$top/out/build-$node$variant.log"
 grep -q 'BUILD: done' "$top/out/build-$node$variant.log"
+# A link with undefined symbols still writes the image, which then fails at
+# run time (%SYSTEM-F-CALLUNDEFSYM); and MMS carries on past a failed
+# compile ("-" actions) and still says "BUILD: done".  Treat all as failures.
+if grep -aE 'USEUNDEF|UNDFSYM|%DCL-[WEF]-|%MMS-[EF]-|%CC-[EF]-|%I?LINK-[EF]-' "$top/out/build-$node$variant.log" >&2; then
+    echo "build: errors or undefined symbols in out/build-$node$variant.log" >&2
+    exit 1
+fi
