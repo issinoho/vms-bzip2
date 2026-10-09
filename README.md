@@ -7,6 +7,7 @@
 [![Release](https://img.shields.io/github/v/release/issinoho/vms-bzip2?label=release)](https://github.com/issinoho/vms-bzip2/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/issinoho/vms-bzip2/total?label=downloads)](https://github.com/issinoho/vms-bzip2/releases)
 ![OpenVMS](https://img.shields.io/badge/OpenVMS-IA64%20%7C%20x86--64-blue)
+[![License](https://img.shields.io/badge/license-bzip2--1.0.6-blue)](LICENSE)
 
 [bzip2](https://sourceware.org/bzip2/) (**1.0.8**), the block-sorting compressor, built natively for
 OpenVMS on **IA64** and **x86-64**, following its own releases. It belongs to the same family as
