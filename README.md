@@ -4,6 +4,8 @@
 
 # bzip2 for OpenVMS
 
+[![Downloads](https://img.shields.io/github/downloads/issinoho/vms-bzip2/total?label=downloads)](https://github.com/issinoho/vms-bzip2/releases)
+
 [bzip2](https://sourceware.org/bzip2/) (**1.0.8**), the block-sorting compressor, built natively for
 OpenVMS on **IA64** and **x86-64**, following its own releases. It belongs to the same family as
 [GNU grep](https://github.com/issinoho/vms-grep), [GNU sed](https://github.com/issinoho/vms-sed),
