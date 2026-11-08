@@ -6,11 +6,11 @@
 
 [![Release](https://img.shields.io/github/v/release/issinoho/vms-bzip2?label=release)](https://github.com/issinoho/vms-bzip2/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/issinoho/vms-bzip2/total?label=downloads)](https://github.com/issinoho/vms-bzip2/releases)
-![OpenVMS](https://img.shields.io/badge/OpenVMS-IA64%20%7C%20x86--64-blue)
+![OpenVMS](https://img.shields.io/badge/OpenVMS-IA64%20%7C%20x86--64%20%7C%20Alpha-blue)
 [![License](https://img.shields.io/badge/license-bzip2--1.0.6-blue)](LICENSE)
 
 [bzip2](https://sourceware.org/bzip2/) (**1.0.8**), the block-sorting compressor, built natively for
-OpenVMS on **IA64** and **x86-64**, following its own releases. It belongs to the same family as
+OpenVMS on **IA64**, **x86-64** and **Alpha**, following its own releases. It belongs to the same family as
 [GNU grep](https://github.com/issinoho/vms-grep), [GNU sed](https://github.com/issinoho/vms-sed),
 [GNU awk](https://github.com/issinoho/vms-awk), [GNU make](https://github.com/issinoho/vms-make),
 [GNU diffutils](https://github.com/issinoho/vms-diffutils),
@@ -30,12 +30,12 @@ agree).
 
 **Released: [v1.0.8-vms1](https://github.com/issinoho/vms-bzip2/releases/tag/v1.0.8-vms1).**
 
-| | IA64 (OpenVMS V8.4-2L3, VSI C 7.4) | x86-64 (OpenVMS E9.2-4, VSI C 7.7) |
-|---|---|---|
-| Builds | yes | yes |
-| Smoke test: upstream's own test (sample1-3 decompress to the reference files and compress at -1, -2, -3 to the reference `.bz2` files byte for byte), a text-file round trip, `-t`, `bzip2recover`, a `/NAMES=UPPERCASE` program linking with `LIBBZ2.OLB`, error statuses | 12/12 | 12/12 |
-| Kit install, smoke test on the installed kit, remove | clean | clean |
-| PCSI kit (`BZIP2`, `V1.0-8E1`) | `ISSINOHO-I64VMS-BZIP2-V0100-8E1-1.PCSI` | `ISSINOHO-X86VMS-BZIP2-V0100-8E1-1.PCSI` |
+| | IA64 (OpenVMS V8.4-2L3, VSI C 7.4) | x86-64 (OpenVMS E9.2-4, VSI C 7.7) | Alpha (OpenVMS V8.4-2L2, VSI C 7.4) |
+|---|---|---|---|
+| Builds | yes | yes | yes |
+| Smoke test: upstream's own test (sample1-3 decompress to the reference files and compress at -1, -2, -3 to the reference `.bz2` files byte for byte), a text-file round trip, `-t`, `bzip2recover`, a `/NAMES=UPPERCASE` program linking with `LIBBZ2.OLB`, error statuses | 12/12 | 12/12 | 12/12 |
+| Kit install, smoke test on the installed kit, remove | clean | clean | clean |
+| PCSI kit (`BZIP2`, `V1.0-8E1`) | `ISSINOHO-I64VMS-BZIP2-V0100-8E1-1.PCSI` | `ISSINOHO-X86VMS-BZIP2-V0100-8E1-1.PCSI` | `ISSINOHO-AXPVMS-BZIP2-V0100-8E1-1.PCSI` |
 
 ## Installing the kit
 
