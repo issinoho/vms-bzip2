@@ -6,8 +6,9 @@ $!     install check passes BZIP2$ROOT:[BIN]).
 $!
 $! Includes upstream's own test (make test): sample1-3.bz2 decompress to
 $! sample1-3.ref, and sample1-3.ref compressed with -1, -2 and -3 give
-$! sample1-3.bz2 byte for byte.  Files are compared byte by byte with VSI
-$! Perl (DIFFERENCES compares records).
+$! sample1-3.bz2 byte for byte.  Files are compared byte by byte (DIFFERENCES
+$! compares records): with VSI Perl where it is installed, otherwise with a
+$! small C program compiled here (OpenVMS Alpha has no VSI Perl).
 $!
 $ set noon
 $ saved_default = f$environment("DEFAULT")
@@ -33,18 +34,44 @@ $ bzip2recover = "$" + bin + "BZIP2RECOVER.EXE"
 $ pass = 0
 $ fail = 0
 $ perl_setup = f$search("SYS$COMMON:[PERL-5_*]PERL_SETUP.COM")
-$ if perl_setup .eqs. ""
-$ then
-$   write sys$output "SMOKE: VSI Perl not found (SYS$COMMON:[PERL-5_*]PERL_SETUP.COM)"
-$   exit 44
-$ endif
-$ @'perl_setup'
+$ if perl_setup .nes. "" then @'perl_setup'
 $ if f$search("SMOKE.DIR") .eqs. "" then create/directory [.SMOKE]
 $ set default [.SMOKE]
 $ set process/parse_style=extended
-$ create same.pl
+$! SAME a b: success if the two files hold the same bytes.
+$ if perl_setup .nes. ""
+$ then
+$   create same.pl
 open my $a, '<:raw', $ARGV[0] or exit 2; open my $b, '<:raw', $ARGV[1] or exit 2;
 local $/; my $x = <$a>; my $y = <$b>; exit($x eq $y ? 0 : 1);
+$   same = "perl same.pl"
+$ else
+$   write sys$output "SMOKE: no VSI Perl; comparing files with SAME.C"
+$   create same.c
+#include <stdio.h>
+#include <stdlib.h>
+int main(int argc, char **argv)
+{
+    FILE *a, *b;
+    int c, d;
+    if (argc != 3) exit(44);
+    /* Text mode, as Perl reads them: a record file's records come back with
+       their line ends, so a VAR file and a Stream_LF file holding the same
+       lines compare equal; Stream_LF bytes are read unchanged. */
+    a = fopen(argv[1], "r");
+    b = fopen(argv[2], "r");
+    if (a == NULL || b == NULL) exit(44);
+    do {
+        c = getc(a);
+        d = getc(b);
+        if (c != d) exit(44);
+    } while (c != EOF);
+    return 0;
+}
+$   cc/object=same.obj same.c
+$   link/executable=same.exe same.obj
+$   same = "$" + f$environment("DEFAULT") + "SAME.EXE"
+$ endif
 $!
 $! 1. version (bzip2 prints it on stderr)
 $ define/user sys$error out.txt
@@ -63,7 +90,7 @@ $ bzip2 "-d" t'n'.bz2
 $ sev = $severity
 $ if sev .eq. 1
 $ then
-$   perl same.pl t'n' 'top'sample'n'.ref
+$   same t'n' 'top'sample'n'.ref
 $   if $status .ne. 1 then sev = 2
 $ endif
 $ name = "sample''n'.bz2 decompresses to sample''n'.ref"
@@ -79,7 +106,7 @@ $ bzip2 "-''n'" r'n'.dat
 $ sev = $severity
 $ if sev .eq. 1
 $ then
-$   perl same.pl r'n'.dat.bz2 'top'sample'n'.bz2
+$   same r'n'.dat.bz2 'top'sample'n'.bz2
 $   if $status .ne. 1 then sev = 2
 $ endif
 $ name = "sample''n'.ref compressed with -''n' is sample''n'.bz2"
@@ -108,7 +135,7 @@ $   bzip2 "-d" text.txt.bz2
 $   sev = $severity
 $   if sev .eq. 1
 $   then
-$     perl same.pl text.txt orig.txt
+$     same text.txt orig.txt
 $     if $status .ne. 1 then sev = 2
 $   endif
 $ endif
