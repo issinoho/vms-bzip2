@@ -64,7 +64,7 @@ subst() {
 }
 # The headers the kit installs, as PCSI file lines.
 includes=$( echo BZLIB.H | sed 's|.*|    file [BZIP2.INCLUDE]&;|; s|;$| ;|')
-for base in I64VMS X86VMS; do
+for base in I64VMS X86VMS AXPVMS; do
     subst $base "" < "$kit/bzip2.pcsi\$desc_template" |
         awk -v d="$includes" '{ if ($0 == "@INCLUDES@") print d; else print }' > "$kit/BZIP2-$base.PCSI\$DESC"
     subst $base "" < "$kit/bzip2.pcsi\$text_template" > "$kit/BZIP2-$base.PCSI\$TEXT"
