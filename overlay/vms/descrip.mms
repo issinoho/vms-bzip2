@@ -1,4 +1,4 @@
-! DESCRIP.MMS - build bzip2 for OpenVMS (IA64, x86-64)
+! DESCRIP.MMS - build bzip2 for OpenVMS (IA64, x86-64, Alpha, VAX)
 !
 ! Run via [.VMS]BUILD.COM, which passes ARCH and creates the output
 ! directories.  bzip2 has no configure; the sources are the Makefile's.
@@ -23,16 +23,27 @@ INST = [.INSTALL_$(ARCH)
 ! any /NAMES link with the library).  _FILE_OFFSET_BITS: bzip2 handles files
 ! over 2 GB; vms_exit and vms_crtl_init are the family's VMS run-time setup.
 CC = CC
+.IFDEF VAX
+! OpenVMS VAX, Compaq C 6.4: VAX floating point only (bzip2 uses none), no
+! /MAIN=POSIX_EXIT, no large files, and no DECC$FEATURE_* routines, so no
+! vms_crtl_init (on VAX the DECC$ logical names alone set the features).
+! vms_exit gives DCL the same exit statuses as on the other platforms.
+CFLAGS = /NAMES=(AS_IS,SHORTENED)-
+	/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES/WARNINGS=(ERRORS=IMPLICITFUNC)-
+	/NOLIST/INCLUDE_DIRECTORY=([],[.VMS])
+VMS_OBJS = $(OBJ)vms_exit.OBJ
+.ELSE
 CFLAGS = /NAMES=(AS_IS,SHORTENED)/FLOAT=IEEE_FLOAT/IEEE_MODE=DENORM_RESULTS-
 	/PREFIX_LIBRARY_ENTRIES=ALL_ENTRIES/WARNINGS=(ERRORS=IMPLICITFUNC)/MAIN=POSIX_EXIT-
 	/NOLIST/INCLUDE_DIRECTORY=([],[.VMS])-
 	/DEFINE=(_LARGEFILE,_USE_STD_STAT,_POSIX_EXIT)
+VMS_OBJS = $(OBJ)vms_exit.OBJ, $(OBJ)vms_crtl_init.OBJ
+.ENDIF
 
 LIB = $(OBJ)LIBBZ2.OLB
 LIB_OBJS = $(OBJ)blocksort.OBJ, $(OBJ)huffman.OBJ, $(OBJ)crctable.OBJ, -
 	$(OBJ)randtable.OBJ, $(OBJ)compress.OBJ, $(OBJ)decompress.OBJ, -
 	$(OBJ)bzlib.OBJ
-VMS_OBJS = $(OBJ)vms_exit.OBJ, $(OBJ)vms_crtl_init.OBJ
 
 ALL : $(LIB), $(BIN)BZIP2.EXE, $(BIN)BZIP2RECOVER.EXE, INSTALL_TREE
 	@ CONTINUE

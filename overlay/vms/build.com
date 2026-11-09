@@ -15,7 +15,8 @@ $ vmsdir = f$parse(proc,,,"DEVICE") + f$parse(proc,,,"DIRECTORY")
 $ set default 'vmsdir'
 $ set default [-]
 $ arch = f$edit(f$getsyi("ARCH_NAME"), "UPCASE")
-$ if arch .eqs. "IA64" .or. arch .eqs. "X86_64" .or. arch .eqs. "ALPHA" then goto arch_ok
+$ if arch .eqs. "IA64" .or. arch .eqs. "X86_64" .or. arch .eqs. "ALPHA" .or. arch .eqs. "VAX" -
+      then goto arch_ok
 $ write sys$error "BUILD: unsupported architecture ''arch'"
 $ goto done
 $arch_ok:
@@ -28,7 +29,10 @@ $ if target .eqs. "" then target = "ALL"
 $ write sys$output "BUILD: ''target' for ''arch' in ''f$environment("DEFAULT")'"
 $ mmsq = ""
 $ if p2 .eqs. "KEEP_GOING" then mmsq = "/IGNORE=ERROR"
-$ mms/description=[.vms]descrip.mms/macro=("ARCH=''arch'")'mmsq' 'target'
+$! VAX (Compaq C 6.4) gets its own qualifiers: see VAX in DESCRIP.MMS.
+$ vaxq = ""
+$ if arch .eqs. "VAX" then vaxq = ",""VAX=1"""
+$ mms/description=[.vms]descrip.mms/macro=("ARCH=''arch'"'vaxq')'mmsq' 'target'
 $ status = $status
 $ if status then write sys$output "BUILD: done"
 $done:

@@ -3,3 +3,4 @@
 0002-exit-vms-exit.patch
 0003-bzip2-env-not-foreign-command-vms.patch
 0004-bzip2-text-records-vms.patch
+0005-bzip2-vax.patch

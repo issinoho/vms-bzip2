@@ -1,0 +1,53 @@
+Subject: bzip2.c: build and run on OpenVMS VAX (lstat, fchmod, fdopen)
+
+The C RTL of OpenVMS VAX V7.3 has neither lstat() nor fchmod(), and its
+fdopen() refuses a "b" in the mode.  VAX VMS has no symbolic links, so
+lstat() is stat(); without fchmod() the output file keeps the process
+default protection, as files made by DCL commands do; and the output file
+is opened "w", since open() made it Stream_LF, which holds binary data
+unchanged.
+
+--- a/bzip2.c	2026-11-09 09:11:27.405804185 +0000
++++ b/bzip2.c	2026-11-09 09:14:14.559736791 +0000
+@@ -98,6 +98,12 @@
+ 
+ #   define SET_BINARY_MODE(fd) /**/
+ 
++#   if defined(__VMS) && defined(__VAX)
++      /* OpenVMS VAX: no symbolic links, and the C RTL has no lstat.  */
++#     undef MY_LSTAT
++#     define MY_LSTAT stat
++#   endif
++
+ #   ifdef __GNUC__
+ #      define NORETURN __attribute__ ((noreturn))
+ #   else
+@@ -993,7 +999,13 @@
+    IntNative fh;
+    fh = open(name, O_WRONLY|O_CREAT|O_EXCL, S_IWUSR|S_IRUSR);
+    if (fh == -1) return NULL;
++#  if defined(__VMS) && defined(__VAX)
++   /* OpenVMS VAX: fdopen() refuses a "b" in the mode (EINVAL); the file
++      open() made is Stream_LF, which holds binary data unchanged.  */
++   fp = fdopen(fh, mode[0] == 'w' ? "w" : mode);
++#  else
+    fp = fdopen(fh, mode);
++#  endif
+    if (fp == NULL) close(fh);
+    return fp;
+ #  else
+@@ -1096,8 +1108,14 @@
+ #  if BZ_UNIX
+    IntNative retVal;
+ 
++#  if defined(__VMS) && defined(__VAX)
++   /* OpenVMS VAX: the C RTL has no fchmod; the output file keeps the
++      process's default protection, as files made by DCL commands do.  */
++   (void) retVal;
++#  else
+    retVal = fchmod ( fd, fileMetaInfo.st_mode );
+    ERROR_IF_NOT_ZERO ( retVal );
++#  endif
+ 
+    (void) fchown ( fd, fileMetaInfo.st_uid, fileMetaInfo.st_gid );
+    /* chown() will in many cases return with EPERM, which can
