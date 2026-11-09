@@ -45,7 +45,15 @@ covers the rules and the pitfalls.
 - **Exit status:** `exit()` goes through `vms_exit()` (`vms/vms_exit.c`); a `return` from
   `main` bypasses it, so `main` ends with `exit()` on VMS.
 - **Smoke tests** compare files byte for byte with VSI Perl
-  (`SYS$COMMON:[PERL-5_*]PERL_SETUP.COM`); DIFFERENCES compares records.
+  (`SYS$COMMON:[PERL-5_*]PERL_SETUP.COM`), or SAME.C where there is no Perl (Alpha, VAX);
+  DIFFERENCES compares records.  SAME holds the value of the `perl` symbol, not its name:
+  DCL expands only the first symbol of a command.
+- **VAX** (OpenVMS V7.3, Compaq C 6.4, no SSH): built and tested over Telnet/FTP with
+  vms-site-config's `tools/vax.py`, not vms.sh.  DESCRIP.MMS has its own VAX qualifiers
+  (no IEEE float, no POSIX_EXIT, no vms_crtl_init: no DECC$FEATURE_* routines); patch 0005
+  covers the missing `lstat`/`fchmod` and `fdopen("wb")`.  ODS-2: one dot per name, so the
+  smoke test compresses typeless files; FTP-binary samples are FIX 512 and get Stream_LF.
+  PCSI on VAX has no `/OPTIONS`; base `VMS`.
 
 ## Commands
 

@@ -6,11 +6,11 @@
 
 [![Release](https://img.shields.io/github/v/release/issinoho/vms-bzip2?label=release)](https://github.com/issinoho/vms-bzip2/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/issinoho/vms-bzip2/total?label=downloads)](https://github.com/issinoho/vms-bzip2/releases)
-![OpenVMS](https://img.shields.io/badge/OpenVMS-IA64%20%7C%20x86--64%20%7C%20Alpha-blue)
+![OpenVMS](https://img.shields.io/badge/OpenVMS-IA64%20%7C%20x86--64%20%7C%20Alpha%20%7C%20VAX-blue)
 [![License](https://img.shields.io/badge/license-bzip2--1.0.6-blue)](LICENSE)
 
 [bzip2](https://sourceware.org/bzip2/) (**1.0.8**), the block-sorting compressor, built natively for
-OpenVMS on **IA64**, **x86-64** and **Alpha**, following its own releases. It belongs to the same family as
+OpenVMS on **IA64**, **x86-64**, **Alpha** and **VAX**, following its own releases. It belongs to the same family as
 [GNU grep](https://github.com/issinoho/vms-grep), [GNU sed](https://github.com/issinoho/vms-sed),
 [GNU awk](https://github.com/issinoho/vms-awk), [GNU make](https://github.com/issinoho/vms-make),
 [GNU diffutils](https://github.com/issinoho/vms-diffutils),
@@ -30,12 +30,18 @@ agree).
 
 **Released: [v1.0.8-vms1](https://github.com/issinoho/vms-bzip2/releases/tag/v1.0.8-vms1).**
 
-| | IA64 (OpenVMS V8.4-2L3, VSI C 7.4) | x86-64 (OpenVMS E9.2-4, VSI C 7.7) | Alpha (OpenVMS V8.4-2L2, VSI C 7.4) |
-|---|---|---|---|
-| Builds | yes | yes | yes |
-| Smoke test: upstream's own test (sample1-3 decompress to the reference files and compress at -1, -2, -3 to the reference `.bz2` files byte for byte), a text-file round trip, `-t`, `bzip2recover`, a `/NAMES=UPPERCASE` program linking with `LIBBZ2.OLB`, error statuses | 12/12 | 12/12 | 12/12 |
-| Kit install, smoke test on the installed kit, remove | clean | clean | clean |
-| PCSI kit (`BZIP2`, `V1.0-8E1`) | `ISSINOHO-I64VMS-BZIP2-V0100-8E1-1.PCSI` | `ISSINOHO-X86VMS-BZIP2-V0100-8E1-1.PCSI` | `ISSINOHO-AXPVMS-BZIP2-V0100-8E1-1.PCSI` |
+| | IA64 (OpenVMS V8.4-2L3, VSI C 7.4) | x86-64 (OpenVMS E9.2-4, VSI C 7.7) | Alpha (OpenVMS V8.4-2L2, VSI C 7.4) | VAX (OpenVMS V7.3, Compaq C 6.4) |
+|---|---|---|---|---|
+| Builds | yes | yes | yes | yes (patch 0005) |
+| Smoke test: upstream's own test (sample1-3 decompress to the reference files and compress at -1, -2, -3 to the reference `.bz2` files byte for byte), a text-file round trip, `-t`, `bzip2recover`, a `/NAMES=UPPERCASE` program linking with `LIBBZ2.OLB`, error statuses | 12/12 | 12/12 | 12/12 | 12/12 |
+| Kit install, smoke test on the installed kit, remove | clean | clean | clean | clean |
+| PCSI kit (`BZIP2`, `V1.0-8E1`) | `ISSINOHO-I64VMS-BZIP2-V0100-8E1-1.PCSI` | `ISSINOHO-X86VMS-BZIP2-V0100-8E1-1.PCSI` | `ISSINOHO-AXPVMS-BZIP2-V0100-8E1-1.PCSI` | `ISSINOHO-VMS-BZIP2-V0100-8E1-1.PCSI` |
+
+On **VAX** (ODS-2 disks, a C library without `lstat()` or `fchmod()`), bzip2 compresses
+`file` to `file.bz2`: a name such as `file.txt.bz2` needs ODS-5, so give bzip2 files without a
+type or use `-c`. A compressed file gets the default protection rather than the original's.
+Files over 2 GB are not supported. The VAX tree was built and tested over Telnet/FTP, as the
+VAX has no SSH.
 
 ## Installing the kit
 
@@ -82,12 +88,14 @@ It installs `bzip2` and `bzip2recover` in `[BZIP2.BIN]`, `LIBBZ2.OLB` (libbz2) i
 | 0002 | `bzip2.c`, `bzip2recover.c`: `exit()` through `vms_exit()` (an error severity under DCL); `main` ends with `exit()`. |
 | 0003 | `bzip2.c`: a `BZIP2`/`BZIP` value starting with `$` is the foreign command that runs bzip2, not options (`getenv()` returns DCL symbols). |
 | 0004 | `bzip2.c`: read a text file (variable-length or VFC records) as text, so its lines survive. |
+| 0005 | `bzip2.c`: on VAX, `stat()` for `lstat()` (no symbolic links), no `fchmod()`, and `fdopen()` without `"b"` (the VAX C RTL refuses it). |
 
 ## How to build
 
 Set up `tools/nodes.conf` as described in
 [vms-grep's README](https://github.com/issinoho/vms-grep#2b-build-on-vms-from-the-host-over-ssh).
-The smoke tests compare files with VSI Perl.
+The smoke tests compare files with VSI Perl, or with a small C program where there is no
+Perl (Alpha, VAX).
 
 ```sh
 git clone https://github.com/issinoho/vms-bzip2.git
@@ -102,7 +110,6 @@ tools/kit.sh ia64           # PCSI kit -> out/kits/
 
 1. Link this library into the other ports where they can use it (Wget, curl).
 2. Offer the patches upstream.
-3. A port to OpenVMS **Alpha**.
 
 The family of ports, all for IA64 and x86-64 (MariaDB: x86-64 only), each following its upstream releases:
 
