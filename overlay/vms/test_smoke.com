@@ -37,14 +37,22 @@ $ perl_setup = f$search("SYS$COMMON:[PERL-5_*]PERL_SETUP.COM")
 $ if perl_setup .nes. "" then @'perl_setup'
 $ if f$search("SMOKE.DIR") .eqs. "" then create/directory [.SMOKE]
 $ set default [.SMOKE]
-$ set process/parse_style=extended
+$ if arch .nes. "VAX" then set process/parse_style=extended
+$! ODS-2 (OpenVMS VAX) allows one dot in a name and bzip2 appends ".bz2", so
+$! there the files it compresses have no type: "r1", not "r1.dat".
+$ dtype = ".dat"
+$ if arch .eqs. "VAX" then dtype = ""
+$ dspec = dtype            ! the same in a DCL file spec ("r1." on VAX)
+$ if dspec .eqs. "" then dspec = "."
 $! SAME a b: success if the two files hold the same bytes.
 $ if perl_setup .nes. ""
 $ then
 $   create same.pl
 open my $a, '<:raw', $ARGV[0] or exit 2; open my $b, '<:raw', $ARGV[1] or exit 2;
 local $/; my $x = <$a>; my $y = <$b>; exit($x eq $y ? 0 : 1);
-$   same = "perl same.pl"
+$!  PERL_SETUP defines perl as a foreign command symbol; DCL expands only the
+$!  first symbol of a command, so put its value, not its name, in SAME.
+$   same = perl + " same.pl"
 $ else
 $   write sys$output "SMOKE: no VSI Perl; comparing files with SAME.C"
 $   create same.c
@@ -73,6 +81,16 @@ $   link/executable=same.exe same.obj
 $   same = "$" + f$environment("DEFAULT") + "SAME.EXE"
 $ endif
 $!
+$! GET from to: copy a sample here.  A sample that came by FTP in binary has
+$! fixed-length 512-byte records, padded at the end; Stream_LF gives back
+$! the file's own bytes.
+$ goto get_done
+$get:
+$ copy/nolog 'from' 'to'
+$ if f$file(to, "RFM") .eqs. "FIX" then set file/attribute=(rfm:stmlf) 'to'
+$ return
+$get_done:
+$!
 $! 1. version (bzip2 prints it on stderr)
 $ define/user sys$error out.txt
 $ define/user sys$output nla0:
@@ -85,12 +103,17 @@ $!
 $! 2-4. upstream's samples decompress to their .ref files
 $ n = 1
 $dec_loop:
-$ copy/nolog 'top'sample'n'.bz2 t'n'.bz2
+$ from = "''top'sample''n'.bz2"
+$ to = "t''n'.bz2"
+$ gosub get
+$ from = "''top'sample''n'.ref"
+$ to = "e''n'.ref"
+$ gosub get
 $ bzip2 "-d" t'n'.bz2
 $ sev = $severity
 $ if sev .eq. 1
 $ then
-$   same t'n' 'top'sample'n'.ref
+$   same t'n' e'n'.ref
 $   if $status .ne. 1 then sev = 2
 $ endif
 $ name = "sample''n'.bz2 decompresses to sample''n'.ref"
@@ -101,12 +124,17 @@ $!
 $! 5-7. compressing sample<n>.ref with -<n> gives sample<n>.bz2 exactly
 $ n = 1
 $cmp_loop:
-$ copy/nolog 'top'sample'n'.ref r'n'.dat
-$ bzip2 "-''n'" r'n'.dat
+$ from = "''top'sample''n'.ref"
+$ to = "r''n'''dspec'"
+$ gosub get
+$ from = "''top'sample''n'.bz2"
+$ to = "e''n'.bz2"
+$ gosub get
+$ bzip2 "-''n'" r'n''dtype'
 $ sev = $severity
 $ if sev .eq. 1
 $ then
-$   same r'n'.dat.bz2 'top'sample'n'.bz2
+$   same r'n''dtype'.bz2 e'n'.bz2
 $   if $status .ne. 1 then sev = 2
 $ endif
 $ name = "sample''n'.ref compressed with -''n' is sample''n'.bz2"
@@ -116,26 +144,26 @@ $ if n .le. 3 then goto cmp_loop
 $!
 $! 8. a text file (variable-length records) round trip, keeping the original
 $!    (-k) and testing (-t): its lines survive (patch 0004)
-$ create text.txt
+$ create text'dspec'
 The quick brown fox jumps over the lazy dog.
-OpenVMS, IA64 and x86-64.
-$ copy/nolog text.txt orig.txt
-$ bzip2 "-k" text.txt
+OpenVMS: IA64, x86-64, Alpha and VAX.
+$ copy/nolog text'dspec' orig.txt
+$ bzip2 "-k" text'dtype'
 $ sev = $severity
-$ if sev .eq. 1 .and. f$search("text.txt.bz2") .eqs. "" then sev = 2
+$ if sev .eq. 1 .and. f$search("text''dtype'.bz2") .eqs. "" then sev = 2
 $ if sev .eq. 1
 $ then
-$   bzip2 "-t" text.txt.bz2
+$   bzip2 "-t" text'dtype'.bz2
 $   sev = $severity
 $ endif
 $ if sev .eq. 1
 $ then
-$   delete/nolog text.txt;*
-$   bzip2 "-d" text.txt.bz2
+$   delete/nolog text'dspec';*
+$   bzip2 "-d" text'dtype'.bz2
 $   sev = $severity
 $   if sev .eq. 1
 $   then
-$     same text.txt orig.txt
+$     same text'dspec' orig.txt
 $     if $status .ne. 1 then sev = 2
 $   endif
 $ endif
@@ -178,7 +206,9 @@ $ name = "a program compiled /NAMES=UPPERCASE links with LIBBZ2.OLB"
 $ gosub check_success
 $!
 $! 12. bzip2recover splits a file into its blocks
-$ copy/nolog 'top'sample1.bz2 rec.bz2
+$ from = "''top'sample1.bz2"
+$ to = "rec.bz2"
+$ gosub get
 $ define/user sys$error out.txt
 $ bzip2recover rec.bz2
 $ sev = $severity
