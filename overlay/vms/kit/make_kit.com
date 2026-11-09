@@ -17,6 +17,7 @@ $ arch = f$edit(f$getsyi("ARCH_NAME"), "UPCASE")
 $ base = "I64VMS"
 $ if arch .eqs. "X86_64" then base = "X86VMS"
 $ if arch .eqs. "ALPHA" then base = "AXPVMS"
+$ if arch .eqs. "VAX" then base = "VMS"
 $!
 $! KIT_PRODUCER, PCSI_VERSION, KIT_VERSION from kit.env
 $ open/read env [.VMS.KIT]KIT.ENV
@@ -59,6 +60,7 @@ $ copy/nolog [.VMS.KIT.DOC]*.* 'mat'
 $ matspec = f$parse(mat,,,"DEVICE","NO_CONCEAL") + f$parse(mat,,,"DIRECTORY","NO_CONCEAL")
 $!
 $ write sys$output "MAKE_KIT: ''KIT_PRODUCER' ''base' BZIP2 ''PCSI_VERSION' (BZIP2 ''KIT_VERSION')"
+$ if arch .eqs. "VAX" then goto package_vax
 $ product package BZIP2 -
     /producer='KIT_PRODUCER' /base_system='base' /version='PCSI_VERSION' -
     /source=[.VMS.KIT]BZIP2-'base'.PCSI$DESC -
@@ -67,6 +69,17 @@ $ product package BZIP2 -
     /format=sequential -
     /options=noconfirm /log
 $ status = $status
+$ goto packaged
+$! PCSI on OpenVMS VAX V7.3 has no /OPTIONS qualifier (and asks nothing here).
+$package_vax:
+$ product package BZIP2 -
+    /producer='KIT_PRODUCER' /base_system='base' /version='PCSI_VERSION' -
+    /source=[.VMS.KIT]BZIP2-'base'.PCSI$DESC -
+    /material='matspec' -
+    /destination='out' -
+    /format=sequential /log
+$ status = $status
+$packaged:
 $ kit = f$search("''out'*.PCSI")
 $ if kit .nes. "" then write sys$output "MAKE_KIT: kit ", kit
 $ if kit .eqs. "" then status = 44

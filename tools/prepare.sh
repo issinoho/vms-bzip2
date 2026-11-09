@@ -64,7 +64,7 @@ subst() {
 }
 # The headers the kit installs, as PCSI file lines.
 includes=$( echo BZLIB.H | sed 's|.*|    file [BZIP2.INCLUDE]&;|; s|;$| ;|')
-for base in I64VMS X86VMS AXPVMS; do
+for base in I64VMS X86VMS AXPVMS VMS; do
     subst $base "" < "$kit/bzip2.pcsi\$desc_template" |
         awk -v d="$includes" '{ if ($0 == "@INCLUDES@") print d; else print }' > "$kit/BZIP2-$base.PCSI\$DESC"
     subst $base "" < "$kit/bzip2.pcsi\$text_template" > "$kit/BZIP2-$base.PCSI\$TEXT"
@@ -72,7 +72,7 @@ done
 rm -f "$kit/bzip2.pcsi\$desc_template" "$kit/bzip2.pcsi\$text_template"
 mv "$kit/bzip2\$startup.com" "$kit/BZIP2\$STARTUP.COM"
 mv "$kit/bzip2\$setup.com" "$kit/BZIP2\$SETUP.COM"
-subst "" "IA64 and x86-64" < "$kit/readme.vms" > "$kit/README.VMS"; rm -f "$kit/readme.vms"
+subst "" "IA64, x86-64, Alpha and VAX" < "$kit/readme.vms" > "$kit/README.VMS"; rm -f "$kit/readme.vms"
 mkdir -p "$kit/doc"
 cp "$stage/LICENSE" "$kit/doc/LICENSE."
 cp "$stage/CHANGES" "$kit/doc/CHANGES."
